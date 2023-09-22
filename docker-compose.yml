@@ -1,0 +1,73 @@
+version: '3.5'
+#TODO should be exchanged with "docker-compose-prod.yml"
+
+services:
+    mydb:
+        image: postgres:13-alpine # Update this to the PostgreSQL version you prefer
+        environment:
+            POSTGRES_PASSWORD: 'postgres' # to be changed
+            POSTGRES_USER: 'postgres'
+            POSTGRES_DB: 'restaurant' # Set the name of your database
+        ports:
+        - 5432:5432
+        container_name: mydb
+        volumes:
+        # Persistent volume
+        - db-store:/var/lib/postgresql/data
+        # Log directory
+        - ./logs:/var/log/postgresql:z
+        # Custom configuration file, if you have one
+        - ./docker/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
+        networks:
+        - app_net
+    # Rust
+    myrust:
+        build:
+            context: .
+            dockerfile: ./docker/rust/Dockerfile
+        working_dir: /simple_restaurant_api
+        expose:
+            - "8080"
+        environment:
+            - TZ=UTC
+        volumes:
+            # logs
+            - ./logs:/var/log/php:z
+            # Rust code
+            - ./simple_restaurant_api/src:/simple_restaurant_api/src
+            - ./simple_restaurant_api/public:/simple_restaurant_api/public
+            - ./simple_restaurant_api/Cargo.lock:/simple_restaurant_api/Cargo.lock
+            - ./simple_restaurant_api/Cargo.toml:/simple_restaurant_api/Cargo.toml
+            #TODO should be removed in Prod
+            - ./simple_restaurant_api/target:/simple_restaurant_api/target
+        container_name: myrust
+        networks:
+            - app_net
+    # nginx
+    nginx:
+        image: nginx:1.23-alpine
+        depends_on:
+        - myrust
+        ports:
+        - 80:80
+        volumes:
+        # What should be served by nginx
+        # Rust code
+        - ./simple_restaurant_api/src:/simple_restaurant_api/src
+        - ./simple_restaurant_api/public:/simple_restaurant_api/public
+        - ./simple_restaurant_api/Cargo.lock:/simple_restaurant_api/Cargo.lock
+        - ./simple_restaurant_api/Cargo.toml:/simple_restaurant_api/Cargo.toml
+        #TODO should be removed in Prod
+        - ./simple_restaurant_api/target:/simple_restaurant_api/target
+        # log
+        - ./logs:/var/log/nginx:z
+        # nginx config
+        - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        container_name: nginx
+        networks:
+            - app_net
+networks:
+    app_net:
+        driver: "bridge"
+volumes:
+    db-store:
