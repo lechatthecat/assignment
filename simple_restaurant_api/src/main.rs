@@ -1,17 +1,21 @@
-use actix_web::{get, web, App, HttpServer, Responder};
+use actix_web::{
+    web::Data, App, HttpServer
+};
 
-#[get("/api/hello/{name}")]
-async fn greet(name: web::Path<String>) -> impl Responder {
-    format!("Hello {name}!")
-}
+mod api;
+mod db;
 
-// http://0.0.0.0:8080/hello/a
-#[actix_web::main] // or #[tokio::main]
+#[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
-        App::new().service(greet)
+    // Create the configuration object
+    let pool = db::pool::get_db_pool().await;
+
+    HttpServer::new(move || {
+        App::new()
+            .app_data(Data::new(pool.clone()))
+            .service(api::api_handler::handlers::api_scope())
     })
-    .bind(("0.0.0.0", 8080))?
+    .bind("0.0.0.0:8080")?
     .run()
     .await
 }
