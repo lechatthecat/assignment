@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 actix-web = "4"
 actix-rt = "2"
+actix-cors = "0.6"
 # db
 bb8 = "0.5"
 bb8-postgres = "0.7"

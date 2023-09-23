@@ -15,7 +15,7 @@ pub async fn greet(
 ) -> impl Responder {
     // Get a connection from the pool
     let conn = pool.get().await.unwrap();
-    
+
     // Execute a query using the connection from the pool
     let rows = conn.query("SELECT * FROM restaurant_tables", &[]).await.unwrap();
 
@@ -28,6 +28,6 @@ pub async fn greet(
         Some(value) => value,
         None => String::from("Default Value"), // or handle it some other way
     };
-    
+
     HttpResponse::Ok().body(format!("Hello, World! {}", value))
 }

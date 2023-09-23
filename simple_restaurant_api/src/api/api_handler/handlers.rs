@@ -15,6 +15,6 @@ pub fn api_scope() -> Scope {
     web::scope("/api")
         .route("/hello/{name}", web::get().to(test::greet))
         .route("/auth/login", web::post().to(auth::login)) // register other API routes here
-        .route("/auth/logout", web::post().to(auth::logout))
+        .route("/auth/current_user", web::get().to(auth::current_user))
         .default_service(web::route().to(api_handler)) // catch-all route for /api
 }
