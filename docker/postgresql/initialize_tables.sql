@@ -51,7 +51,6 @@ CREATE TABLE menus (
 CREATE UNIQUE INDEX index_unique_menu on menus (name);
 CREATE INDEX index_menu on menus (id, name, cook_time_seconds);
 
--- TODO menu item generation
 -- add menus
 INSERT INTO menus ("name","cook_time_seconds") VALUES
 	 ('Hamburger',300), -- 5 minutes
