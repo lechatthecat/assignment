@@ -59,17 +59,17 @@ INSERT INTO menus ("name","cook_time_seconds") VALUES
 	 ('Special Hamburger',600), -- 10 minutes
    ('Special soup',900), -- 15 minutes
    ('Sushi',900), -- 15 minutes
-   ('Potato',60), -- 1 minute
+   ('Potato',300), -- 5 minute
    ('Cheese Hamburger',300), -- 5 minutes
    ('Rice',300), -- 5 minutes
 	 ('Churros',600), -- 10 minutes
    ('Ice cream',300), -- 5 minutes
    ('Roll cake',900), -- 15 minutes
-   ('Small pancake',60), -- 1 minute
+   ('Small pancake',300), -- 5 minute
    ('Bread',300), -- 5 minutes
-   ('Cola',60), -- 1 minute
+   ('Cola',300), -- 5 minute
    ('Strawberry cake',600), -- 10 minutes
-   ('Tea',60), -- 1 minute
+   ('Tea',300), -- 5 minute
    ('Cheese Cake',900), -- 15 minutes
    ('Potato soup',300), -- 5 minute
    ('Hamburger and cola set',900), -- 15 minutes
