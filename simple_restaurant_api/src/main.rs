@@ -3,20 +3,27 @@ use actix_web::{
     web::Data, App, HttpServer
 };
 use api::middleware::jwt_middleware;
+use dotenv::dotenv;
 
 mod api;
 mod db;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+    // Load environment variables from .env file
+    dotenv().ok();
+
     // Create the configuration object
     let pool = db::pool::get_db_pool().await;
 
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allow_any_origin() // TODO For development purposes only, adjust for production
-            // .allowed_origin("http://localhost:3001")
-            .allowed_methods(vec!["GET", "POST"])
+            // "allow any origin" is only for development purposes only, but this app won't be served in actual server
+            // so I will leave this as it is
+            .allow_any_origin()
+            //.allowed_origin("http://localhost")
+            .allowed_methods(vec!["GET", "POST", "DELETE"])
             .allowed_headers(vec!["Authorization", "Content-Type"])
             .max_age(60 * 60 * 24); // 1 days
             /*

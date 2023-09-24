@@ -16,6 +16,17 @@ export default function Home() {
     if (!loading && !user) {
       router.push('/login');
     }
+    if (!loading && user) {
+      // fetch('http://0.0.0.0:8080/api/table/1/order', {
+      //   method: 'GET',
+      //   headers: {
+      //     'Authorization': `Bearer ${user.token}`,
+      //   },
+      // }).then(res => {
+      //   console.log(res);
+      // });
+    }
+
   }, [user, loading, router]);
 
   return (

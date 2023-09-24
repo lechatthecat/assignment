@@ -31,13 +31,13 @@ services:
         environment:
             - TZ=UTC
         volumes:
-            # logs
-            - ./logs:/var/log/php:z
+            # std input log should be saved?
             # Rust code
             - ./simple_restaurant_api/src:/simple_restaurant_api/src
             - ./simple_restaurant_api/public:/simple_restaurant_api/public
             - ./simple_restaurant_api/Cargo.lock:/simple_restaurant_api/Cargo.lock
             - ./simple_restaurant_api/Cargo.toml:/simple_restaurant_api/Cargo.toml
+            #TODO source the initialize.sql
             #TODO should be removed in Prod
             - ./simple_restaurant_api/target:/simple_restaurant_api/target
         container_name: myrust

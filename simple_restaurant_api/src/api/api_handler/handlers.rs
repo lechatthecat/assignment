@@ -3,18 +3,26 @@ use actix_web::{
     Result, Scope
 };
 use super::super::auth;
-use super::super::test;
+use super::super::order;
+use super::super::restaurant_table;
+use super::super::menu;
 
 async fn api_handler(req: HttpRequest) -> Result<HttpResponse> {
     // For 404
     let path = req.path();
-    Ok(HttpResponse::Ok().body(format!("API call to {}", path)))
+    Ok(HttpResponse::NotFound().body(format!("This API: '{}' does not exist.", path)))
 }
 
 pub fn api_scope() -> Scope {
+    // APIs except "login" and "current_user" are protected by JWT middleware
     web::scope("/api")
-        .route("/hello/{name}", web::get().to(test::greet))
-        .route("/auth/login", web::post().to(auth::login)) // register other API routes here
+        .route("/auth/login", web::post().to(auth::login))
         .route("/auth/current_user", web::get().to(auth::current_user))
+        .route("/table", web::get().to(restaurant_table::get_tables))
+        .route("/table/{table_id}/order", web::get().to(restaurant_table::get_table_orders))
+        .route("/order", web::post().to(order::add_order))
+        .route("/order", web::delete().to(order::delete_order))
+        .route("/order/complete", web::delete().to(order::complete_order))
+        .route("/menu", web::get().to(menu::get_menus))
         .default_service(web::route().to(api_handler)) // catch-all route for /api
 }

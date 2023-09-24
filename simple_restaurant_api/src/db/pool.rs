@@ -5,6 +5,6 @@ pub async fn get_db_pool () -> Pool<PostgresConnectionManager<NoTls>>
 {
     let config = super::config::get_config();
     let pg_mgr = PostgresConnectionManager::new(config, NoTls);
-    let pool = Pool::builder().max_size(15).build(pg_mgr).await.unwrap();
+    let pool = Pool::builder().max_size(100).build(pg_mgr).await.unwrap();
     return pool;
 }

@@ -7,7 +7,7 @@ CREATE TABLE restaurant_tables (
   note VARCHAR(500) DEFAULT null,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE INDEX index_table on restaurant_tables (table_number);
+CREATE INDEX index_table on restaurant_tables (id, table_number);
 
 -- Adds 10 tables
 INSERT INTO restaurant_tables (table_number, note) VALUES (1, null);
@@ -32,7 +32,6 @@ CREATE TABLE users (
 );
 CREATE UNIQUE INDEX unique_user on users (name);
 
--- TODO user generation
 -- add users
 INSERT INTO users ("name","password") VALUES
 	 ('test_user1','$2b$04$BuM27R11fuD0hubq.Nykd.aw.WDI8F2/lYCPabzfLdGG1GHvYqR/i'),
@@ -49,7 +48,8 @@ CREATE TABLE menus (
   cook_time_seconds INTEGER NOT null,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-CREATE UNIQUE INDEX index_menu on menus (name, cook_time_seconds);
+CREATE UNIQUE INDEX index_unique_menu on menus (name);
+CREATE INDEX index_menu on menus (id, name, cook_time_seconds);
 
 -- TODO menu item generation
 -- add menus
@@ -65,7 +65,7 @@ INSERT INTO menus ("name","cook_time_seconds") VALUES
 	 ('Churros',600), -- 10 minutes
    ('Ice cream',300), -- 5 minutes
    ('Roll cake',900), -- 15 minutes
-   ('Small cake',60), -- 1 minute
+   ('Small pancake',60), -- 1 minute
    ('Bread',300), -- 5 minutes
    ('Cola',60), -- 1 minute
    ('Strawberry cake',600), -- 10 minutes
@@ -76,16 +76,25 @@ INSERT INTO menus ("name","cook_time_seconds") VALUES
    ('Curry rice and cola set',900), -- 15 minutes
 	 ('Special Hamburger and cola set',900), -- 15 minutes
    ('Sushi and cola set',900), -- 15 minutes
-   ('Lemon cake',900); -- 15 minutes;
+   ('Pancake set',900), -- 15 minutes;
+   ('Wine',900), -- 15 minutes
+   ('Onion soup',300), -- 5 minute
+   ('Carrot soup',900), -- 15 minutes
+   ('Shrimps',900), -- 15 minutes
+	 ('Ham',900), -- 15 minutes
+   ('Beer',900), -- 15 minutes
+   ('Coffee',900); -- 15 minutes;
 
 -- Create orders table
 CREATE TABLE orders (
+  id BIGSERIAL PRIMARY KEY,
   restaurant_table_id INTEGER NOT null REFERENCES restaurant_tables (id),
   menu_id INTEGER NOT null REFERENCES menus (id),
   expected_cook_finish_time TIMESTAMP NOT null,
-  is_checked_by_staff BOOLEAN NOT NULL,
+  is_served_by_staff BOOLEAN NOT NULL,
+  served_by_user_id INTEGER DEFAULT null REFERENCES users (id),
   checked_by_user_id INTEGER DEFAULT null REFERENCES users (id),
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(restaurant_table_id, menu_id)
+  deleted_at TIMESTAMP DEFAULT NULL
 );
-CREATE UNIQUE INDEX unique_order on orders (restaurant_table_id, menu_id);
+CREATE INDEX index_orders on orders (id, restaurant_table_id, menu_id, served_by_user_id, checked_by_user_id, deleted_at);

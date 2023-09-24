@@ -39,7 +39,7 @@ pub fn decode_token(token: &str) -> Result<TokenData<Claims>, jsonwebtoken::erro
     decode::<Claims>(token, &DecodingKey::from_secret("secret".as_ref()), &Validation::new(Algorithm::HS256))
 }
 
-pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, ()>
+pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, String>
 {
     // Extract the token from the Authorization header
     if let Some(auth_header) = req.get_headers().get("Authorization") {
@@ -53,13 +53,13 @@ pub fn verify <R: RequestHeaders>(req: &R)  -> Result<Claims, ()>
                     Ok(user_info) => {
                         return Ok(user_info.claims);
                     },
-                    Err(_) => {
+                    Err(err) => {
                         // Token is invalid
-                        return Err(());
+                        return Err(err.to_string());
                     }
                 }
             }
         }
     }
-    return Err(());
+    return Err("Header Authorization is not found".to_owned());
 }
