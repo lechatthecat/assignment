@@ -1,6 +1,6 @@
 use actix_web::{
     HttpResponse,
-    Responder, HttpRequest, cookie::Cookie, web, http::StatusCode
+    Responder, HttpRequest, web, http::StatusCode
 };
 use bcrypt::verify;
 use serde::{Deserialize, Serialize};
@@ -61,29 +61,8 @@ pub async fn login(
 }
 
 pub async fn current_user(req: HttpRequest) -> impl Responder {
-    // Extract the token from the Authorization header
-    if let Some(auth_header) = req.headers().get("Authorization") {
-        if let Ok(auth_str) = auth_header.to_str() {
-            // The token is typically prefixed by "Bearer" in the Authorization header
-            let parts: Vec<&str> = auth_str.split_whitespace().collect();
-            if parts.len() == 2 && parts[0] == "Bearer" {
-                let token = parts[1];
-                // Verify the token and decode the user information
-                match jwt::decode_token(token) {
-                    Ok(user_info) => {
-                        let user_info = user_info.claims;
-                        // Return user information if the token is valid
-                        return HttpResponse::Ok().json(user_info);
-                    },
-                    Err(_) => {
-                        // Token is invalid
-                        return HttpResponse::new(StatusCode::UNAUTHORIZED);
-                    }
-                }
-            }
-        }
+    match jwt::verify(&req) {
+        Ok(user_info) => HttpResponse::Ok().json(user_info),
+        Err(_) => HttpResponse::new(StatusCode::UNAUTHORIZED)
     }
-
-    // No valid Authorization header found, the user is not logged in
-    HttpResponse::new(StatusCode::UNAUTHORIZED)
 }

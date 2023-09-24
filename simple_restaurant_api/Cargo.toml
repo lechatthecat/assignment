@@ -9,6 +9,8 @@ edition = "2021"
 actix-web = "4"
 actix-rt = "2"
 actix-cors = "0.6"
+actix-service = "2"
+futures = "0.3"
 # db
 bb8 = "0.5"
 bb8-postgres = "0.7"
@@ -19,7 +21,7 @@ tokio-postgres = "0.7"
 jsonwebtoken = "7"
 bcrypt = "0.10"
 serde = { version = "1", features = ["derive"] }
-# other
+# other, like json
 serde_json = "1.0"
 
 # TODO Remove here for prod

@@ -23,7 +23,6 @@ export const AuthProvider = ({ children }) => {
 
       if (!response.ok) {
         // Handle login failure
-        alert('Login failed.');
         console.error('Login failed');
         return false;
       }

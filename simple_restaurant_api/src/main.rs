@@ -2,6 +2,7 @@ use actix_cors::Cors;
 use actix_web::{
     web::Data, App, HttpServer
 };
+use api::middleware::jwt_middleware;
 
 mod api;
 mod db;
@@ -16,10 +17,18 @@ async fn main() -> std::io::Result<()> {
             .allow_any_origin() // TODO For development purposes only, adjust for production
             // .allowed_origin("http://localhost:3001")
             .allowed_methods(vec!["GET", "POST"])
-            .allow_any_header()
-            .max_age(60 * 60 * 24 * 3); // 3 days
+            .allowed_headers(vec!["Authorization", "Content-Type"])
+            .max_age(60 * 60 * 24); // 1 days
+            /*
+            This sets the max_age to 1 day, meaning that
+            once the browser makes a successful preflight request to the server,
+            it can cache the results of that request for up to 3 days.
+            Subsequent requests to the same resource within this time frame won't trigger another preflight request;
+            the browser will use the cached results instead.
+            */
 
         App::new()
+            .wrap(jwt_middleware::JwtMiddleware)
             .wrap(cors)
             .app_data(Data::new(pool.clone()))
             .service(api::api_handler::handlers::api_scope())
