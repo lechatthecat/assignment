@@ -27,14 +27,14 @@ pub async fn login(
 
     // Execute a query using the connection from the pool
     let rows = conn.query(
-        "SELECT name,password FROM users WHERE name = $1;",
+        "SELECT id,name,password FROM users WHERE name = $1;",
         &[&req.name]
     ).await.unwrap();
     if rows.is_empty() {
         return HttpResponse::Unauthorized().finish();
     }
-    let password = rows.get(0).unwrap().get::<_, String>("password");
-
+    let password: String = rows.get(0).unwrap().get("password");
+    let user_id: i32 = rows.get(0).unwrap().get("id");
     // check if the password is valid
     match verify(&req.password, &password) {
         Ok(_) => {
@@ -43,6 +43,7 @@ pub async fn login(
                 Ok(token) => {
                     // Create UserData instance with the necessary user information
                     let user_data = User {
+                        id: user_id,
                         name: req.name.clone(),
                         token: token,
                     };

@@ -10,8 +10,14 @@ use bb8_postgres::{
 };
 use chrono::NaiveDateTime;
 use log::error;
+use serde::{Deserialize, Serialize};
 use tokio_postgres::NoTls;
 use crate::db::model::restaurant_table::{RestaurantTable, RestaurantTableOrders};
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct DeleteOrderRequest {
+    restaurant_table_id: i32,
+}
 
 pub async fn get_tables(
     _req: HttpRequest,
@@ -50,7 +56,7 @@ pub async fn get_tables(
 }
 
 pub async fn get_table_orders(
-    table_id: web::Path<i32>,
+    restaurant_table_id: web::Path<i32>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
     // Get a connection from the pool
@@ -59,42 +65,42 @@ pub async fn get_table_orders(
     let rows_result = conn.query(
         r#"
         SELECT
-            restaurant_tables.id as restaurant_table_id,
-            restaurant_tables.table_number as table_number,
-            restaurant_tables.note as table_note,
-            menus.name as menu_name,
-            menus.cook_time_seconds as cook_time_seconds,
-            orders.id as order_id,
-            orders.expected_cook_finish_time as expected_cook_finish_time,
-            orders.created_at as ordered_time,
-            orders.is_served_by_staff as is_served_by_staff,
-            orders.served_by_user_id as served_by_user_id,
+            rt.id as restaurant_table_id,
+            rt.table_number as table_number,
+            rt.note as table_note,
+            mn.name as menu_name,
+            mn.cook_time_seconds as cook_time_seconds,
+            odr.id as order_id,
+            odr.expected_cook_finish_time as expected_cook_finish_time,
+            odr.created_at as ordered_time,
+            odr.is_served_by_staff as is_served_by_staff,
+            odr.served_by_user_id as served_by_user_id,
             serve_user.name as serve_staff_name,
-            orders.checked_by_user_id as checked_by_user_id,
+            odr.checked_by_user_id as checked_by_user_id,
             check_user.name as check_staff_name
         FROM
-            restaurant_tables
-        LEFT JOIN
-            orders
+            restaurant_tables as rt
+        INNER JOIN
+            orders as odr
         ON
-            restaurant_tables.id = orders.restaurant_table_id
-        LEFT JOIN
-            menus
+            rt.id = odr.restaurant_table_id
+        INNER JOIN
+            menus as mn
         ON
-            orders.menu_id = menus.id
+            odr.menu_id = mn.id
         LEFT JOIN
             users as serve_user
         ON
-            orders.served_by_user_id = serve_user.id
-        LEFT JOIN
+            odr.served_by_user_id = serve_user.id
+        INNER JOIN
             users as check_user
         ON
-            orders.checked_by_user_id = check_user.id
+            odr.checked_by_user_id = check_user.id
         WHERE
-            restaurant_tables.id = $1 and orders.deleted_at is null
+            rt.id = $1 AND odr.deleted_at is null;
         ;
         "#,
-        &[&table_id.into_inner()]
+        &[&restaurant_table_id.clone()]
     ).await;
     // Check the result of select SQL
     match rows_result {
@@ -104,16 +110,24 @@ pub async fn get_table_orders(
                 return HttpResponse::Ok().json(Vec::<RestaurantTableOrders>::new());
             }
             return HttpResponse::Ok().json(rows.iter().map(|row| {
-                let expected_cook_finish_time: SystemTime = row.get("ordered_time");
-                let expected_cook_finish_time = NaiveDateTime::from_timestamp_opt(
-                    expected_cook_finish_time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64,
-                    0,
-                );
-                let ordered_time : SystemTime = row.get("ordered_time");
-                let ordered_time = NaiveDateTime::from_timestamp_opt(
-                    ordered_time.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64,
-                    0,
-                );
+                let expected_cook_finish_time: Option<SystemTime> = row.get("expected_cook_finish_time");
+                let expected_cook_finish_time = if let Some(data) = expected_cook_finish_time {
+                    NaiveDateTime::from_timestamp_opt(
+                        data.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64,
+                        0,
+                    )
+                } else {
+                    None
+                };
+                let ordered_time : Option<SystemTime> = row.get("ordered_time");
+                let ordered_time = if let Some(data) = ordered_time {
+                    NaiveDateTime::from_timestamp_opt(
+                        data.duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() as i64,
+                        0,
+                    )
+                } else {
+                    None
+                };
                 RestaurantTableOrders {
                     id: row.get("restaurant_table_id"),
                     table_number: row.get("table_number"),
@@ -134,6 +148,44 @@ pub async fn get_table_orders(
         Err(err) => {
             error!("{}", err);
             return HttpResponse::InternalServerError().finish();
+        }
+    };
+}
+
+pub async fn delete_orders(
+    _req: HttpRequest,
+    order_req: web::Json<DeleteOrderRequest>,
+    pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
+) -> impl Responder {
+    // Get a connection from the pool
+    let mut conn = pool.get().await.unwrap();
+
+    // Start a transaction
+    let transaction = conn.transaction().await.unwrap();
+    let rows_result = transaction.execute(
+        r#"
+        UPDATE
+            orders
+        SET
+            deleted_at = now()
+        WHERE
+            restaurant_table_id = $1
+        ;
+        "#,
+        &[
+            &order_req.restaurant_table_id,
+        ]
+    ).await;
+    // Commit the transaction
+    transaction.commit().await.unwrap();
+
+    match rows_result {
+        Ok(_result) => {
+            return HttpResponse::NoContent();
+        },
+        Err(err) => {
+            error!("{}", err);
+            return HttpResponse::InternalServerError();
         }
     };
 }

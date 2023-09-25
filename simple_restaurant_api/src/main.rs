@@ -34,6 +34,7 @@ async fn main() -> std::io::Result<()> {
             the browser will use the cached results instead.
             */
 
+        // Start the API server
         App::new()
             .wrap(jwt_middleware::JwtMiddleware)
             .wrap(cors)

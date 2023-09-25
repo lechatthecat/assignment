@@ -4,5 +4,6 @@ use serde::{Serialize, Deserialize};
 pub struct Menu {
     pub id: i32,
     pub name: String,
-    pub cook_time_seconds: i32
+    pub cook_time_seconds: i32,
+    pub price: i32,
 }

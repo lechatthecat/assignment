@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (name, password) => {
     try {
       // TODO url
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch('http://localhost:8080/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -28,6 +28,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       const user_data = await response.json();
+      user_data.sub = user_data.name;
       console.log(user_data);
       // Store the token in localStorage
       window.localStorage.setItem('login_token', user_data.token);
@@ -48,7 +49,7 @@ export const AuthProvider = ({ children }) => {
         return false;
       }
       // TODO url
-      const response = await fetch('/api/auth/current_user', {
+      const response = await fetch('http://localhost:8080/api/auth/current_user', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -57,6 +58,7 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         const user = await response.json();
+        user.token = token;
         return user;
       } else {
         return false;

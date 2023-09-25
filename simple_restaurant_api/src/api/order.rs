@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use actix_web::{
     HttpResponse,
-    Responder, web
+    Responder, web, HttpRequest
 };
 use bb8_postgres::{
     PostgresConnectionManager,
@@ -17,7 +17,7 @@ use tokio_postgres::{NoTls, Transaction, Error};
 pub struct AddOrderRequest {
     restaurant_table_id: i32,
     menu_id: i32,
-    checked_by_user_id: i32,
+    user_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -28,10 +28,11 @@ pub struct DeleteOrderRequest {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CompleteOrderRequest {
     order_id: i64,
-    served_by_user_id: i32,
+    user_name: String,
 }
 
 pub async fn add_order(
+    _req: HttpRequest,
     order_req: web::Json<AddOrderRequest>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
@@ -44,7 +45,7 @@ pub async fn add_order(
         &mut transaction,
         order_req.restaurant_table_id,
         order_req.menu_id,
-        order_req.checked_by_user_id,
+        order_req.user_name.clone(),
     ).await;
     // Commit the transaction
     transaction.commit().await.unwrap();
@@ -69,6 +70,7 @@ pub async fn add_order(
 }
 
 pub async fn delete_order(
+    _req: HttpRequest,
     order_req: web::Json<DeleteOrderRequest>,
     pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
 ) -> impl Responder {
@@ -77,6 +79,21 @@ pub async fn delete_order(
 
     // Start a transaction
     let transaction = conn.transaction().await.unwrap();
+    let rows_result = transaction.execute(
+        r#"
+        UPDATE
+            orders
+        SET
+            deleted_at = now()
+        WHERE
+            orders.id = $1
+        ;
+        "#,
+        &[
+            &order_req.order_id,
+        ]
+    ).await;
+
     let rows_result = transaction.execute(
         r#"
         UPDATE
@@ -114,6 +131,22 @@ pub async fn complete_order(
 
     // Start a transaction
     let transaction = conn.transaction().await.unwrap();
+    let user_row_result = transaction.query_one(
+        r#"
+        SELECT id
+        FROM users
+        WHERE name = $1
+        "#,
+        &[&order_req.user_name]
+    ).await;
+    let user_id: i32 = match user_row_result {
+        Ok(user_row) => user_row.get("id"),
+        Err(err) => {
+            error!("{}", err);
+            return HttpResponse::InternalServerError();
+        }
+    };
+
     let rows_result = transaction.execute(
         r#"
         UPDATE
@@ -128,7 +161,7 @@ pub async fn complete_order(
         "#,
         &[
             &order_req.order_id,
-            &order_req.served_by_user_id,
+            &user_id,
         ]
     ).await;
     // Commit the transaction
@@ -149,12 +182,12 @@ async fn check_existence_and_insert(
     transaction: &mut Transaction<'_>,
     restaurant_table_id: i32,
     menu_id: i32,
-    user_id: i32,
+    user_name: String,
 ) -> Result<Result<u64, Error>, String>
 {
     // Execute a query using the connection from the pool
     // Before inserting, we will validate each id.
-    let menu_rows_result = transaction.query(
+    let menu_row_result = transaction.query_one(
         r#"
         SELECT
             *
@@ -166,13 +199,9 @@ async fn check_existence_and_insert(
         "#,
         &[&menu_id]
     ).await;
-    let menu_seconds = match menu_rows_result {
-        Ok(menu_rows) => {
-            if menu_rows.is_empty() {
-                warn!("add_order this menu id doesn't exist: {}", &menu_id);
-                return Err(format!("add_order this menu id doesn't exist: {}", &menu_id));
-            }
-            let seconds: i32 = menu_rows.get(0).unwrap().get("cook_time_seconds");
+    let menu_seconds = match menu_row_result {
+        Ok(menu_row) => {
+            let seconds: i32 = menu_row.get("cook_time_seconds");
             seconds
         },
         Err(err) => {
@@ -180,31 +209,28 @@ async fn check_existence_and_insert(
             return Err(err.to_string());
         }
     };
-    let users_rows_result = transaction.query(
+    let users_rows_result = transaction.query_one(
         r#"
         SELECT
             *
         FROM
             users
         WHERE
-            users.id = $1
+            users.name = $1
         ;
         "#,
-        &[&user_id]
+        &[&user_name]
     ).await;
-    match users_rows_result {
-        Ok(users_rows) => {
-            if users_rows.is_empty() {
-                warn!("add_order this user id doesn't exist: {}", &user_id);
-                return Err(format!("add_order this user id doesn't exist: {}", &user_id));
-            }
+    let user_id: i32 = match users_rows_result {
+        Ok(users_row) => {
+            users_row.get("id")
         },
         Err(err) => {
             error!("{}", err);
             return Err(err.to_string());
         }
     };
-    let tables_rows_result = transaction.query(
+    let tables_row_result = transaction.query_one(
         r#"
         SELECT
             *
@@ -216,13 +242,8 @@ async fn check_existence_and_insert(
         "#,
         &[&restaurant_table_id]
     ).await;
-    match tables_rows_result {
-        Ok(tables_rows) => {
-            if tables_rows.is_empty() {
-                warn!("add_order this restaurant_table_id doesn't exist: {}", &restaurant_table_id);
-                return Err(format!("add_order this restaurant_table_id doesn't exist: {}", &restaurant_table_id));
-            }
-        },
+    match tables_row_result {
+        Ok(_tables_rows) => {}
         Err(err) => {
             error!("{}", err);
             return Err(err.to_string());

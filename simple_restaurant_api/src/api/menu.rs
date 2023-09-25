@@ -23,7 +23,7 @@ pub async fn get_menus(
 
     // Execute a query using the connection from the pool
     let rows_result = conn.query(
-        "SELECT id,name,cook_time_seconds FROM menus;",
+        "SELECT id,name,cook_time_seconds,price FROM menus;",
         &[]
     ).await;
     match rows_result {
@@ -36,8 +36,45 @@ pub async fn get_menus(
                     id: row.get("id"),
                     name: row.get("name"),
                     cook_time_seconds: row.get("cook_time_seconds"),
+                    price: row.get("price"),
                 }
             }).collect::<Vec<Menu>>());
+        },
+        Err(err) => {
+            error!("{}", err);
+            return HttpResponse::InternalServerError().finish();
+        }
+    };
+}
+
+
+pub async fn get_menu(
+    _req: HttpRequest,
+    menu_id: web::Path<i32>,
+    pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
+) -> impl Responder {
+    // Get a connection from the pool
+    let conn = pool.get().await.unwrap();
+
+    // Execute a query using the connection from the pool
+    let rows_result = conn.query(
+        "SELECT id,name,cook_time_seconds,price FROM menus WHERE id = $1;",
+        &[&menu_id.into_inner()]
+    ).await;
+    match rows_result {
+        Ok(rows) => {
+            if rows.is_empty() {
+                return HttpResponse::Ok().json("");
+            }
+            let row = rows.get(0).unwrap();
+            return HttpResponse::Ok().json(
+                Menu {
+                    id: row.get("id"),
+                    name: row.get("name"),
+                    cook_time_seconds: row.get("cook_time_seconds"),
+                    price: row.get("price"),
+                }
+            );
         },
         Err(err) => {
             error!("{}", err);

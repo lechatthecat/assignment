@@ -1,0 +1,12 @@
+button.addOrderButton {
+    margin-left: 10px;
+}
+button.deleteOrderButton {
+    margin-left: 10px;
+}
+
+li.order {
+    margin-right: 10px;
+    margin-top: 10px;
+    display: block;
+}
