@@ -1,6 +1,8 @@
 # latest version of Rust as of Sep 2023
 FROM rust:1.72
 
+RUN mkdir -p /var/log/actix && chmod -R 775 /var/log/actix
+
 WORKDIR /simple_restaurant_api
 
 # Copy the contents of your Rust project to the container
