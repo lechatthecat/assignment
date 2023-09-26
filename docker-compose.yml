@@ -1,25 +1,26 @@
 version: '3.5'
-#TODO should be exchanged with "docker-compose-prod.yml"
 
 services:
     mydb:
-        image: postgres:13-alpine # Update this to the PostgreSQL version you prefer
+        build:
+            context: .
+            dockerfile: ./docker/postgresql/Dockerfile
         environment:
-            POSTGRES_PASSWORD: 'postgres' # to be changed
+            POSTGRES_PASSWORD: 'postgres'
             POSTGRES_USER: 'postgres'
-            POSTGRES_DB: 'restaurant' # Set the name of your database
+            POSTGRES_DB: 'restaurant'
         ports:
-        - 5432:5432
+            - 5432:5432
         container_name: mydb
         volumes:
-        # Persistent volume
-        - db-store:/var/lib/postgresql/data
-        # Log directory
-        - ./logs:/var/log/postgresql:z
-        # Custom configuration file, if you have one
-        - ./docker/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf
+            - db-store:/var/lib/postgresql/data
+            - ./logs:/var/log/postgresql:z
         networks:
-        - app_net
+            - app_net
+        # Password
+        env_file:
+            - ./docker/postgresql/.env.db
+        #restart: on-failure:5
     # Rust
     myrust:
         build:
@@ -31,18 +32,18 @@ services:
         environment:
             - TZ=UTC
         volumes:
-            # std input log should be saved?
+            # log
+            - ./logs:/var/log/actix:z
             # Rust code
             - ./simple_restaurant_api/src:/simple_restaurant_api/src
             - ./simple_restaurant_api/public:/simple_restaurant_api/public
             - ./simple_restaurant_api/Cargo.lock:/simple_restaurant_api/Cargo.lock
             - ./simple_restaurant_api/Cargo.toml:/simple_restaurant_api/Cargo.toml
-            #TODO source the initialize.sql
-            #TODO should be removed in Prod
-            - ./simple_restaurant_api/target:/simple_restaurant_api/target
+        command: /simple_restaurant_api/target/release/simple_restaurant_api > /var/log/actix/actix.log 2>&1
         container_name: myrust
         networks:
             - app_net
+        #restart: on-failure:5
     # nginx
     nginx:
         image: nginx:1.23-alpine
@@ -57,8 +58,6 @@ services:
         - ./simple_restaurant_api/public:/simple_restaurant_api/public
         - ./simple_restaurant_api/Cargo.lock:/simple_restaurant_api/Cargo.lock
         - ./simple_restaurant_api/Cargo.toml:/simple_restaurant_api/Cargo.toml
-        #TODO should be removed in Prod
-        - ./simple_restaurant_api/target:/simple_restaurant_api/target
         # log
         - ./logs:/var/log/nginx:z
         # nginx config
@@ -66,6 +65,7 @@ services:
         container_name: nginx
         networks:
             - app_net
+        #restart: on-failure:5
 networks:
     app_net:
         driver: "bridge"

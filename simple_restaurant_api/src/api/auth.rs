@@ -12,6 +12,8 @@ use bb8_postgres::{
 };
 use crate::{api::jwt::jwt, db::model::user::User};
 
+use super::jwt::jwt::Claims;
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LoginRequest {
     name: String,

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useAuth } from "../context/authContext";
 import Countdown from "../components/countdown";
+import Modal from "../components/modal";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,7 +14,10 @@ export default function Order() {
   const router = useRouter();
   const { user, loading } = useAuth();
   const [orders, setOrders] = useState([]);
+  const [orderId, setOrder] = useState(null);
   const [tableId, setTableId] = useState(null);
+  const [isSending, setIsSending] = useState(false);
+  const [isModalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     const { tableId } = router.query;
@@ -23,7 +27,7 @@ export default function Order() {
     if (!loading && user && tableId) {
       setTableId(tableId);
       axios
-        .get(`http://localhost:8080/api/table/${tableId}/order`, {
+        .get(`/api/table/${tableId}/order`, {
           headers: {
             Authorization: `Bearer ${user.token}`,
           },
@@ -38,10 +42,20 @@ export default function Order() {
     }
   }, [user, loading, router]);
 
+  const handleOpenModal = (user, orderId) => {
+    setOrder(user, orderId);
+    setModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalOpen(false);
+  };
+
   const deleteOrder = (orderId) => {
+    setIsSending(true);
     console.log("Order ID:", orderId);
     axios
-      .delete(`http://localhost:8080/api/order`, {
+      .delete(`/api/order`, {
         headers: {
           Authorization: `Bearer ${user.token}`,
           "Content-Type": "application/json",
@@ -55,23 +69,26 @@ export default function Order() {
         setOrders((prevOrders) =>
           prevOrders.filter((order) => order.order_id !== orderId)
         );
+        setIsSending(false);
+        alert(`Successfully canceled`);
       })
       .catch((error) => {
+        setIsSending(false);
         alert("Error fetching data: ", error);
       });
   };
 
   const serveOrder = (orderId, menuName) => {
+    setIsSending(true);
     console.log("Order ID:", orderId);
     axios
-      .delete(`http://localhost:8080/api/order/complete`, {
+      .delete(`/api/order/complete`, {
         headers: {
           Authorization: `Bearer ${user.token}`,
           "Content-Type": "application/json",
         },
         data: {
           order_id: parseInt(orderId),
-          user_name: user.sub,
         },
       })
       .then((res) => {
@@ -79,17 +96,20 @@ export default function Order() {
         setOrders((prevOrders) =>
           prevOrders.filter((order) => order.order_id !== orderId)
         );
+        setIsSending(false);
         alert(`Successfully served "${menuName}"`);
       })
       .catch((error) => {
+        setIsSending(false);
         alert("Error fetching data: ", error);
       });
   };
 
   const deleteAllOrders = (tableId) => {
+    setIsSending(true);
     console.log("Table ID:", tableId);
     axios
-      .delete(`http://localhost:8080/api/table/order`, {
+      .delete(`/api/table/order`, {
         headers: {
           Authorization: `Bearer ${user.token}`,
           "Content-Type": "application/json",
@@ -101,9 +121,11 @@ export default function Order() {
       .then((res) => {
         console.log(res.data);
         setOrders([]);
+        setIsSending(false);
         alert(`Successfully canceled all orders`);
       })
       .catch((error) => {
+        setIsSending(false);
         alert("Error fetching data: ", error);
       });
   };
@@ -139,6 +161,7 @@ export default function Order() {
       </Head>
       <main className={`${styles.main} ${inter.className}`}>
         <h2>Table {tableId}</h2>
+        {isModalOpen && <Modal user={user} onClose={handleCloseModal} orderId={orderId} />}
         <ul>
           {orders.length === 0 ? (
             <div>No order found</div>
@@ -163,17 +186,26 @@ export default function Order() {
                       className={`${styles.deleteOrderButton}`}
                       type="button"
                       onClick={() => deleteOrder(order.order_id)}
+                      disabled={isSending}
                     >
-                      cancel order
+                      Cancel order
                     </button>
                     <button
                       className={`${styles.deleteOrderButton}`}
                       type="button"
+                      disabled={isSending}
                       onClick={() =>
                         serveOrder(order.order_id, order.menu_name)
                       }
                     >
-                      serve
+                      Serve
+                    </button>
+                    <button
+                      className={`${styles.deleteOrderButton}`}
+                      type="button"
+                      disabled={isSending}
+                      onClick={() => handleOpenModal(order.order_id)}>
+                      Detail
                     </button>
                   </li>
                 </ul>

@@ -7,7 +7,8 @@ const LoginPage = () => {
     const router = useRouter();
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
-    const { login } = useAuth(); // Use the useAuth hook to access the login function
+    const [isLoggingIn, setIsLoggingIn] = useState(false);
+    const { login } = useAuth();
     const handleNameChange = (e) => {
         setName(e.target.value);
     };
@@ -16,7 +17,9 @@ const LoginPage = () => {
     };
     const handleSubmit = async (e) => {
       e.preventDefault();
+      setIsLoggingIn(true);
       let isSuccess = await login(name, password);
+      setIsLoggingIn(false);
       if (isSuccess) {
         router.push('/');
       } else {
@@ -46,6 +49,7 @@ const LoginPage = () => {
                         placeholder="Enter Password"
                         name="password"
                         onChange={handlePasswordChange}
+                        disabled={isLoggingIn}
                         required
                     />
                     <button className={`${styles.formButton}`} type="submit">Login</button>

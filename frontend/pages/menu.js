@@ -13,6 +13,7 @@ export default function Menu() {
   const { user, loading } = useAuth();
   const [menus, setMenus] = useState([]);
   const [tableId, setTableId] = useState(null);
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     const { tableId } = router.query;
@@ -22,7 +23,7 @@ export default function Menu() {
     if (!loading && user && tableId) {
       setTableId(tableId);
       axios
-        .get(`http://localhost:8080/api/menu`, {
+        .get(`/api/menu`, {
           headers: {
             Authorization: `Bearer ${user.token}`,
           },
@@ -38,13 +39,13 @@ export default function Menu() {
   }, [user, loading, router]);
 
   const addOrder = (tableId, menuId, menuName) => {
+    setIsSending(true);
     console.log("Menu ID:", menuId);
     axios
-      .post(`http://localhost:8080/api/order`,
+      .post(`/api/order`,
       {
           restaurant_table_id: parseInt(tableId),
           menu_id: parseInt(menuId),
-          user_name: user.sub,
       },
       {
         headers: {
@@ -55,9 +56,11 @@ export default function Menu() {
       .then((res) => {
         console.log(res.data);
         alert(`"${menuName}" was added to the order`);
+        setIsSending(false);
       })
       .catch((error) => {
         alert("Error fetching data: ", error);
+        setIsSending(false);
       });
   };
 
@@ -93,6 +96,7 @@ export default function Menu() {
                       className={`${styles.deleteOrderButton}`}
                       type="button"
                       onClick={() => addOrder(tableId, menu.id, menu.name)}
+                      disabled={isSending}
                     >
                       Add this to order
                     </button>

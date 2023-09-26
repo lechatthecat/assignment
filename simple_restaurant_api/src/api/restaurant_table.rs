@@ -12,7 +12,7 @@ use chrono::NaiveDateTime;
 use log::error;
 use serde::{Deserialize, Serialize};
 use tokio_postgres::NoTls;
-use crate::db::model::restaurant_table::{RestaurantTable, RestaurantTableOrders};
+use crate::db::model::restaurant_table::{RestaurantTable, RestaurantTableOrder};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DeleteOrderRequest {
@@ -69,6 +69,7 @@ pub async fn get_table_orders(
             rt.table_number as table_number,
             rt.note as table_note,
             mn.name as menu_name,
+            mn.price as price,
             mn.cook_time_seconds as cook_time_seconds,
             odr.id as order_id,
             odr.expected_cook_finish_time as expected_cook_finish_time,
@@ -107,7 +108,7 @@ pub async fn get_table_orders(
         // Converting the result to vec
         Ok(rows) => {
             if rows.is_empty() {
-                return HttpResponse::Ok().json(Vec::<RestaurantTableOrders>::new());
+                return HttpResponse::Ok().json(Vec::<RestaurantTableOrder>::new());
             }
             return HttpResponse::Ok().json(rows.iter().map(|row| {
                 let expected_cook_finish_time: Option<SystemTime> = row.get("expected_cook_finish_time");
@@ -128,10 +129,11 @@ pub async fn get_table_orders(
                 } else {
                     None
                 };
-                RestaurantTableOrders {
+                RestaurantTableOrder {
                     id: row.get("restaurant_table_id"),
                     table_number: row.get("table_number"),
                     table_note: row.get("table_note"),
+                    price: row.get("price"),
                     menu_name: row.get("menu_name"),
                     cook_time_seconds: row.get("cook_time_seconds"),
                     order_id: row.get("order_id"),
@@ -143,7 +145,7 @@ pub async fn get_table_orders(
                     checked_by_user_id: row.get("checked_by_user_id"),
                     check_staff_name: row.get("check_staff_name"),
                 }
-            }).collect::<Vec<RestaurantTableOrders>>());
+            }).collect::<Vec<RestaurantTableOrder>>());
         },
         Err(err) => {
             error!("{}", err);
@@ -181,7 +183,7 @@ pub async fn delete_orders(
 
     match rows_result {
         Ok(_result) => {
-            return HttpResponse::NoContent();
+            return HttpResponse::Ok();
         },
         Err(err) => {
             error!("{}", err);

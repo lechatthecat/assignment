@@ -6,11 +6,20 @@ WORKDIR /simple_restaurant_api
 # Copy the contents of your Rust project to the container
 COPY ./simple_restaurant_api .
 
-# Build the Rust project
-# TODO should be uncommented for prod
-# RUN cargo build --release
+WORKDIR /frontend
+COPY ./frontend .
 
-# Command to run the compiled Rust program
-# TODO should be changed to "release"
-#CMD ["/simple_restaurant_api/target/release/simple_restaurant_api"]
-CMD ["/simple_restaurant_api/target/debug/simple_restaurant_api"]
+# Install Node.js 18 and npm
+RUN apt-get update && \
+    apt-get install -y curl && \
+    curl -sL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN npm install && npm run build
+
+WORKDIR /simple_restaurant_api
+
+# Build the Rust project
+RUN cargo build --release

@@ -18,7 +18,7 @@ export default function Home() {
       router.push('/login');
     }
     if (!loading && user) {
-      axios.get('http://localhost:8080/api/table', {
+      axios.get('/api/table', {
         headers: {
           'Authorization': `Bearer ${user.token}`,
         },

@@ -5,8 +5,8 @@ use std::time::{SystemTime, Duration};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Claims {
-    sub: String,
-    exp: usize,
+    pub sub: String,
+    pub exp: usize,
 }
 
 // For generics

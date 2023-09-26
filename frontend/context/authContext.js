@@ -9,8 +9,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (name, password) => {
     try {
-      // TODO url
-      const response = await fetch('http://localhost:8080/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,8 +47,7 @@ export const AuthProvider = ({ children }) => {
         console.log(token);
         return false;
       }
-      // TODO url
-      const response = await fetch('http://localhost:8080/api/auth/current_user', {
+      const response = await fetch('/api/auth/current_user', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

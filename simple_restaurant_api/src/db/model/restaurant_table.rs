@@ -9,11 +9,12 @@ pub struct RestaurantTable {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct RestaurantTableOrders {
+pub struct RestaurantTableOrder {
    pub id: i32,
    pub table_number: i32,
    pub table_note: Option<String>,
    pub menu_name: Option<String>,
+   pub price: Option<i32>,
    pub cook_time_seconds: Option<i32>,
    pub order_id: Option<i64>,
    pub expected_cook_finish_time: Option<NaiveDateTime>,
