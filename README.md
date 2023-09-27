@@ -21,6 +21,7 @@ simple_restaurant_api/src/main.rs
 
 Please go to the root directory of where you cloned the assignment repository. Then run:
 ```shell
+$ cd simple_restaurant_api
 $ cargo test
 ```
 
@@ -36,7 +37,7 @@ The requests are:
 8. Delete all orders of the table
 
 This set of requests will be sent 15 times at once asynchronously.
-As actix web server will spawn 20 workers, it should handle more than 10 equests at once.
+As actix web server will spawn 20 workers, it should handle more than 10 requests at once.
 So I think this will achieve this requirement:
 
 > The application MUST accept at least 10 simultaneous incoming add/- remove/query requests.
@@ -53,9 +54,11 @@ I know separate frontend is not necessary at all. But I prepared a very simple f
 - Html/JS/CSS files are handled by Nginx. Nginx reverse-proxies the requests for API to Actix container. Thus only API requests are handled by Actix. (I know it was not necessary though..)
 
 ## ToDo
+
 - Maybe I could have used swagger to create documents for APIs
 - I could have created more test cases in Rust code/Actix.
-
+- I know there would have been better way for Nextjs compilation... But this isn't the main task for this time.
+  
 ## Requirements
 The [original requirements](https://github.com/paidy/interview/blob/master/SimpleRestaurantApi.md) are:
 
