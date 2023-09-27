@@ -120,6 +120,11 @@ mod tests {
             order_id: i64,
         }
 
+        #[derive(Serialize, Deserialize, Debug)]
+        struct DeleteAllOrdersRequest {
+            restaurant_table_id: i32,
+        }
+
         // Push the future to the vector
         futures.push(async move {
             for _ in 0..15 {
@@ -261,7 +266,7 @@ mod tests {
                     )
                     .send()
                     .await?;
-                logger::log(logger::Header::INFO, &format!("{:?}", order_items));
+                logger::log(logger::Header::INFO, "Successfully Canceled");
 
                 // 8. serve one of them
                 client
@@ -274,7 +279,20 @@ mod tests {
                     )
                     .send()
                     .await?;
-                logger::log(logger::Header::INFO, &format!("{:?}", order_items));
+                logger::log(logger::Header::INFO, "Successfully Served");
+
+                // 9. Delete all orders of the table
+                client
+                    .delete(format!("http://localhost/api/table/order"))
+                    .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
+                    .json(
+                        &(DeleteAllOrdersRequest {
+                            restaurant_table_id: table.id,
+                        }),
+                    )
+                    .send()
+                    .await?;
+                logger::log(logger::Header::INFO, "All orders deleted");
             }
             Ok::<(), reqwest::Error>(())
         });
