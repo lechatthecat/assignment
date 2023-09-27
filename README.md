@@ -36,10 +36,25 @@ The requests are:
 8. Delete all orders of the table
 
 This set of requests will be sent 15 times at once asynchronously.
-As actix web server will spawn 20 workers, it should handle more than requests at once.
+As actix web server will spawn 20 workers, it should handle more than 10 equests at once.
+So I think this will achieve this requirement:
+
+> The application MUST accept at least 10 simultaneous incoming add/- remove/query requests.
 
 ## But will it really work as an application?
 I know separate frontend is not necessary at all. But I prepared a very simple frontend with React and Next.js. You can see the login page from here: http://localhost/login
+
+## About the application
+- This app creates the enviroment by docker-compose
+- It has 3 containers: Rust (Actix) container, Postgresql container, Nginx container
+- Docker related files are in: /docker
+- Logs of all three containers are created in /logs
+- I know login feature is not required, but this app allows the staff to login with JWT token. Once they login, they can use the jwt token to use protected APIs. With this login, the API side doesn't confuse which request is made by who. 
+- Html/JS/CSS files are handled by Nginx. Nginx reverse-proxies the requests for API to Actix container. Thus only API requests are handled by Actix. (I know it was not necessary though..)
+
+## ToDo
+- Maybe I could have used swagger to create documents for APIs
+- I could have created more test cases in Rust code/Actix.
 
 ## Requirements
 The [original requirements](https://github.com/paidy/interview/blob/master/SimpleRestaurantApi.md) are:
