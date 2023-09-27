@@ -36,7 +36,6 @@ services:
             - ./logs:/simple_restaurant_api/log
             # Rust code
             - ./simple_restaurant_api/src:/simple_restaurant_api/src
-            - ./simple_restaurant_api/public:/simple_restaurant_api/public
             - ./simple_restaurant_api/Cargo.lock:/simple_restaurant_api/Cargo.lock
             - ./simple_restaurant_api/Cargo.toml:/simple_restaurant_api/Cargo.toml
         command: /simple_restaurant_api/target/release/simple_restaurant_api
