@@ -9,10 +9,9 @@ use bb8_postgres::{
     bb8::Pool
 };
 use chrono::NaiveDateTime;
-use log::error;
 use serde::{Deserialize, Serialize};
 use tokio_postgres::NoTls;
-use crate::db::model::restaurant_table::{RestaurantTable, RestaurantTableOrder};
+use crate::{db::model::restaurant_table::{RestaurantTable, RestaurantTableOrder}, lib::logger};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DeleteOrderRequest {
@@ -49,7 +48,7 @@ pub async fn get_tables(
             }).collect::<Vec<RestaurantTable>>());
         },
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError().finish();
         }
     };
@@ -148,7 +147,7 @@ pub async fn get_table_orders(
             }).collect::<Vec<RestaurantTableOrder>>());
         },
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError().finish();
         }
     };
@@ -186,7 +185,7 @@ pub async fn delete_orders(
             return HttpResponse::Ok();
         },
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError();
         }
     };

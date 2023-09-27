@@ -6,9 +6,11 @@ use bb8_postgres::{
     PostgresConnectionManager,
     bb8::Pool
 };
-use log::error;
 use tokio_postgres::NoTls;
-use crate::db::model::menu::Menu;
+use crate::{
+    db::model::menu::Menu,
+    lib::logger
+};
 
 pub async fn get_menus(
     _req: HttpRequest,
@@ -41,7 +43,7 @@ pub async fn get_menus(
             }).collect::<Vec<Menu>>());
         },
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError().finish();
         }
     };
@@ -77,7 +79,7 @@ pub async fn get_menu(
             );
         },
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError().finish();
         }
     };

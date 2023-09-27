@@ -9,11 +9,13 @@ use bb8_postgres::{
     bb8::Pool
 };
 use chrono::{Duration, Utc, NaiveDateTime};
-use log::error;
 use serde::{Deserialize, Serialize};
 use tokio_postgres::{NoTls, Transaction, Error};
 
-use crate::db::model::restaurant_table::RestaurantTableOrder;
+use crate::{
+    db::model::restaurant_table::RestaurantTableOrder,
+    lib::logger
+};
 
 use super::jwt::jwt;
 
@@ -127,7 +129,7 @@ pub async fn get_order(
             );
         },
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError().finish();
         }
     };
@@ -141,7 +143,7 @@ pub async fn add_order(
     let user = match jwt::verify(&req) {
         Ok(user_info) => user_info,
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::new(StatusCode::UNAUTHORIZED);
         }
     };
@@ -167,7 +169,7 @@ pub async fn add_order(
                     return HttpResponse::Ok().finish();
                 }
                 Err(e) => {
-                    error!("{}", e);
+                    logger::log(logger::Header::ERROR, &e.to_string());
                     return HttpResponse::InternalServerError().finish();
                 }
             }
@@ -212,7 +214,7 @@ pub async fn delete_order(
             return HttpResponse::Ok();
         },
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError();
         }
     };
@@ -226,7 +228,7 @@ pub async fn complete_order(
     let user = match jwt::verify(&req) {
         Ok(user_info) => user_info,
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::new(StatusCode::UNAUTHORIZED);
         }
     };
@@ -247,7 +249,7 @@ pub async fn complete_order(
     let user_id: i32 = match user_row_result {
         Ok(user_row) => user_row.get("id"),
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::BadRequest().finish();
         }
     };
@@ -277,7 +279,7 @@ pub async fn complete_order(
             return HttpResponse::Ok().finish();
         },
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return HttpResponse::InternalServerError().finish();
         }
     };
@@ -310,7 +312,7 @@ async fn check_existence_and_insert(
             seconds
         },
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return Err(HttpResponse::BadRequest());
         }
     };
@@ -331,7 +333,7 @@ async fn check_existence_and_insert(
             users_row.get("id")
         },
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return Err(HttpResponse::BadRequest());
         }
     };
@@ -350,7 +352,7 @@ async fn check_existence_and_insert(
     match tables_row_result {
         Ok(_tables_row) => {}
         Err(err) => {
-            error!("{}", err);
+            logger::log(logger::Header::ERROR, &err.to_string());
             return Err(HttpResponse::BadRequest());
         }
     };

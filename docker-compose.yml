@@ -20,7 +20,7 @@ services:
         # Password
         env_file:
             - ./docker/postgresql/.env.db
-        #restart: on-failure:5
+        restart: on-failure:5
     # Rust
     myrust:
         build:
@@ -33,17 +33,17 @@ services:
             - TZ=UTC
         volumes:
             # log
-            - ./logs:/var/log/actix:z
+            - ./logs:/simple_restaurant_api/log
             # Rust code
             - ./simple_restaurant_api/src:/simple_restaurant_api/src
             - ./simple_restaurant_api/public:/simple_restaurant_api/public
             - ./simple_restaurant_api/Cargo.lock:/simple_restaurant_api/Cargo.lock
             - ./simple_restaurant_api/Cargo.toml:/simple_restaurant_api/Cargo.toml
-        command: /simple_restaurant_api/target/release/simple_restaurant_api > /var/log/actix/actix.log 2>&1
+        command: /simple_restaurant_api/target/release/simple_restaurant_api
         container_name: myrust
         networks:
             - app_net
-        #restart: on-failure:5
+        restart: on-failure:5
     # nginx
     nginx:
         image: nginx:1.23-alpine
@@ -65,7 +65,7 @@ services:
         container_name: nginx
         networks:
             - app_net
-        #restart: on-failure:5
+        restart: on-failure:5
 networks:
     app_net:
         driver: "bridge"

@@ -1,0 +1,28 @@
+version: '3.5'
+
+services:
+    mydb:
+        build:
+            context: .
+            dockerfile: ./docker/postgresql/Dockerfile
+        environment:
+            POSTGRES_PASSWORD: 'postgres'
+            POSTGRES_USER: 'postgres'
+            POSTGRES_DB: 'restaurant'
+        ports:
+            - 5432:5432
+        container_name: mydb
+        volumes:
+            - db-store:/var/lib/postgresql/data
+            - ./logs:/var/log/postgresql:z
+        networks:
+            - app_net
+        # Password
+        env_file:
+            - ./docker/postgresql/.env.db
+        restart: on-failure:5
+networks:
+    app_net:
+        driver: "bridge"
+volumes:
+    db-store:
