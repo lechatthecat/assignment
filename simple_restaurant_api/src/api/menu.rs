@@ -9,7 +9,7 @@ use bb8_postgres::{
 use tokio_postgres::NoTls;
 use crate::{
     db::model::menu::Menu,
-    lib::logger
+    library::logger
 };
 
 pub async fn get_menus(

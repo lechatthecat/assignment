@@ -11,7 +11,7 @@ use bb8_postgres::{
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use tokio_postgres::NoTls;
-use crate::{db::model::restaurant_table::{RestaurantTable, RestaurantTableOrder}, lib::logger};
+use crate::{db::model::restaurant_table::{RestaurantTable, RestaurantTableOrder}, library::logger};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DeleteOrderRequest {

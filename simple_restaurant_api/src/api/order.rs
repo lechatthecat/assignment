@@ -14,7 +14,7 @@ use tokio_postgres::{NoTls, Transaction, Error};
 
 use crate::{
     db::model::restaurant_table::RestaurantTableOrder,
-    lib::logger
+    library::logger
 };
 
 use super::jwt::jwt;

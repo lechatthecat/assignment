@@ -12,7 +12,7 @@ use bb8_postgres::{
 use crate::{
     api::jwt::jwt,
     db::model::user::User,
-    lib::logger
+    library::logger
 };
 
 #[derive(Serialize, Deserialize, Debug)]

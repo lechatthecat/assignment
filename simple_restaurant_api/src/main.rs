@@ -5,7 +5,7 @@ use dotenv::dotenv;
 
 mod api;
 mod db;
-mod lib;
+mod library;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -45,11 +45,12 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
+#[allow(dead_code)]
 #[cfg(test)]
 mod tests {
-    use crate::lib::logger;
+    use crate::library::logger;
     use chrono::NaiveDateTime;
-    use futures::{future::join_all, stream, StreamExt};
+    use futures::future::join_all;
     use rand::{Rng, seq::SliceRandom};
     use reqwest::{header, Client};
     use serde::{Deserialize, Serialize};

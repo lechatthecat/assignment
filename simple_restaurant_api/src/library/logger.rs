@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::path::Path;
