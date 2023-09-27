@@ -127,9 +127,8 @@ mod tests {
                 let client = Client::new();
                 let mut rng = rand::thread_rng();
                 let number = rng.gen_range(1..=20);
-                // TODO 8080 should be removed
                 let user: LoginResponseData = client
-                    .post("http://localhost:8080/api/auth/login")
+                    .post("http://localhost/api/auth/login")
                     .json(
                         &(LoginPostData {
                             name: format!("{}{}", "test_user", number),
@@ -144,7 +143,7 @@ mod tests {
 
                 // 2. Get all tables information
                 let tables: Vec<TableResponseData> = client
-                    .get("http://localhost:8080/api/table")
+                    .get("http://localhost/api/table")
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .send()
                     .await?
@@ -158,7 +157,7 @@ mod tests {
 
                 // 4. Get menu items and show it to the customer
                 let menu_items: Vec<MenuResponseData> = client
-                    .get("http://localhost:8080/api/menu")
+                    .get("http://localhost/api/menu")
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .send()
                     .await?
@@ -172,7 +171,7 @@ mod tests {
                 let pick_three = rng.gen_range(0..=29);
                 let menu_one = menu_items.get(pick_one).unwrap();
                 let menu_item_one: MenuResponseData = client
-                    .get(format!("http://localhost:8080/api/menu/{}", menu_one.id))
+                    .get(format!("http://localhost/api/menu/{}", menu_one.id))
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .send()
                     .await?
@@ -182,7 +181,7 @@ mod tests {
 
                 let menu_two = menu_items.get(pick_two).unwrap();
                 let menu_item_two: MenuResponseData = client
-                    .get(format!("http://localhost:8080/api/menu/{}", menu_two.id))
+                    .get(format!("http://localhost/api/menu/{}", menu_two.id))
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .send()
                     .await?
@@ -192,7 +191,7 @@ mod tests {
 
                 let menu_three = menu_items.get(pick_three).unwrap();
                 let menu_item_three: MenuResponseData = client
-                    .get(format!("http://localhost:8080/api/menu/{}", menu_three.id))
+                    .get(format!("http://localhost/api/menu/{}", menu_three.id))
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .send()
                     .await?
@@ -202,7 +201,7 @@ mod tests {
 
                 // 6. Order the three items
                 client
-                    .post("http://localhost:8080/api/order")
+                    .post("http://localhost/api/order")
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .json(
                         &(AddOrderPostData {
@@ -213,7 +212,7 @@ mod tests {
                     .send()
                     .await?;
                 client
-                    .post("http://localhost:8080/api/order")
+                    .post("http://localhost/api/order")
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .json(
                         &(AddOrderPostData {
@@ -224,7 +223,7 @@ mod tests {
                     .send()
                     .await?;
                 client
-                    .post("http://localhost:8080/api/order")
+                    .post("http://localhost/api/order")
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .json(
                         &(AddOrderPostData {
@@ -237,7 +236,7 @@ mod tests {
                 logger::log(logger::Header::INFO, "Order success");
 
                 let order_items: Vec<OrderResponseData> = client
-                    .get(format!("http://localhost:8080/api/table/{}/order", table.id))
+                    .get(format!("http://localhost/api/table/{}/order", table.id))
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .send()
                     .await?
@@ -253,7 +252,7 @@ mod tests {
 
                 // 7. cancel one of them
                 client
-                    .delete(format!("http://localhost:8080/api/order"))
+                    .delete(format!("http://localhost/api/order"))
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .json(
                         &(DeleteOrderRequest {
@@ -266,7 +265,7 @@ mod tests {
 
                 // 8. serve one of them
                 client
-                    .delete(format!("http://localhost:8080/api/order/complete"))
+                    .delete(format!("http://localhost/api/order/complete"))
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .json(
                         &(CompleteOrderRequest {
