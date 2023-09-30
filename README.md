@@ -13,6 +13,10 @@ $ docker-compose up --build -d
 
 After the compilation of the docker-compose environment, the application should be running on: http://localhost/login
 
+You can login with:  
+name: test_user1  
+password: password  
+
 DB schema initialization, DB records initialization are automatically done by the docker-compose.
 
 ## How to test this app
