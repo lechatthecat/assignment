@@ -49,7 +49,8 @@ I know separate frontend is not necessary at all. But I prepared a very simple f
 - This app creates the enviroment by docker-compose
 - It has 3 containers: Rust (Actix) container, Postgresql container, Nginx container
 - Docker related files are in: /docker
-- Logs of all three containers are created in /logs
+- Logs of DB and Nginx containers are created in /logs
+- Log of Rust (API) container is created in /simple_restaurant_api/log
 - I know login feature is not required, but this app allows the staff to login with JWT token. Once they login, they can use the jwt token to use protected APIs. With this login, the API side doesn't confuse which request is made by who. 
 - Html/JS/CSS files are handled by Nginx. Nginx reverse-proxies the requests for API to Actix container. Thus only API requests are handled by Actix. (I know it was not necessary though..)
 

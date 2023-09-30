@@ -23,6 +23,7 @@ pub fn api_scope() -> Scope {
         .route("/table/order", web::delete().to(restaurant_table::delete_orders))
         .route("/order/{order_id}", web::get().to(order::get_order))
         .route("/order", web::post().to(order::add_order))
+        .route("/orders", web::post().to(order::add_orders))
         .route("/order", web::delete().to(order::delete_order))
         .route("/order/complete", web::delete().to(order::complete_order))
         .route("/menu", web::get().to(menu::get_menus))

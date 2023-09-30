@@ -7,6 +7,8 @@ mod api;
 mod db;
 mod library;
 
+const PROJECT_PATH: &'static str = env!("CARGO_MANIFEST_DIR");
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
@@ -17,10 +19,8 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let cors = Cors::default()
-            // "allow any origin" is only for development purposes only, but this app won't be served in actual server
-            // so I will leave this as it is
-            .allow_any_origin()
-            //.allowed_origin("http://localhost")
+            //.allow_any_origin()
+            .allowed_origin("http://localhost")
             .allowed_methods(vec!["GET", "POST", "DELETE"])
             .allowed_headers(vec!["Authorization", "Content-Type"])
             .max_age(60 * 60 * 24); // 1 day
@@ -93,6 +93,13 @@ mod tests {
             restaurant_table_id: i32,
             menu_id: i32,
         }
+
+        #[derive(Serialize, Deserialize, Debug)]
+        struct AddOrdersPostData {
+            restaurant_table_id: i32,
+            menu_ids: Vec<i32>,
+        }
+
         #[derive(Debug, Deserialize)]
         struct OrderResponseData {
             id: i32,
@@ -204,37 +211,19 @@ mod tests {
                     .json()
                     .await?;
                 logger::log(logger::Header::INFO, &format!("{:?}", menu_item_three));
-
+                logger::log(logger::Header::INFO, &format!("Menu IDs: {}, {}, {}", menu_item_one.id, menu_item_two.id, menu_item_three.id));
                 // 6. Order the three items
                 client
-                    .post("http://localhost/api/order")
+                    .post("http://localhost/api/orders")
                     .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
                     .json(
-                        &(AddOrderPostData {
+                        &(AddOrdersPostData {
                             restaurant_table_id: table.id,
-                            menu_id: menu_item_one.id,
-                        }),
-                    )
-                    .send()
-                    .await?;
-                client
-                    .post("http://localhost/api/order")
-                    .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
-                    .json(
-                        &(AddOrderPostData {
-                            restaurant_table_id: table.id,
-                            menu_id: menu_item_two.id,
-                        }),
-                    )
-                    .send()
-                    .await?;
-                client
-                    .post("http://localhost/api/order")
-                    .header(header::AUTHORIZATION, format!("Bearer {}", user.token))
-                    .json(
-                        &(AddOrderPostData {
-                            restaurant_table_id: table.id,
-                            menu_id: menu_item_three.id,
+                            menu_ids: vec![
+                                menu_item_one.id,
+                                menu_item_two.id,
+                                menu_item_three.id,
+                            ],
                         }),
                     )
                     .send()
@@ -248,6 +237,7 @@ mod tests {
                     .await?
                     .json()
                     .await?;
+                logger::log(logger::Header::INFO, &format!("Table: {:?}",  table.id));
                 logger::log(logger::Header::INFO, &format!("{:?}", order_items));
 
                 let indices: Vec<usize> = (0..order_items.len()).collect();

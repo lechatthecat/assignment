@@ -2,15 +2,15 @@ use std::time::SystemTime;
 
 use actix_web::{
     HttpResponse,
-    Responder, web, HttpRequest, HttpResponseBuilder, http::StatusCode
+    Responder, web, HttpRequest, http::StatusCode
 };
 use bb8_postgres::{
     PostgresConnectionManager,
     bb8::Pool
 };
-use chrono::{Duration, Utc, NaiveDateTime};
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
-use tokio_postgres::{NoTls, Transaction, Error};
+use tokio_postgres::NoTls;
 
 use crate::{
     db::model::restaurant_table::RestaurantTableOrder,
@@ -18,11 +18,18 @@ use crate::{
 };
 
 use super::jwt::jwt;
+use super::service;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AddOrderRequest {
     restaurant_table_id: i32,
     menu_id: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AddOrdersRequest {
+    restaurant_table_id: i32,
+    menu_ids: Vec<i32>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -153,22 +160,68 @@ pub async fn add_order(
 
     // Start a transaction
     let mut transaction = conn.transaction().await.unwrap();
-    let rows_result = check_existence_and_insert(
+    let rows_result = service::order_service::check_existence_and_insert_order(
         &mut transaction,
         order_req.restaurant_table_id,
         order_req.menu_id,
         user.sub.clone(),
     ).await;
-    // Commit the transaction
-    transaction.commit().await.unwrap();
+    match rows_result {
+        Ok(result) => {
+            match result {
+                Ok(_rows) => {
+                    // Commit the transaction
+                    transaction.commit().await.unwrap();
+                    return HttpResponse::Ok().finish();
+                }
+                Err(e) => {
+                    transaction.rollback().await.unwrap();
+                    logger::log(logger::Header::ERROR, &e.to_string());
+                    return HttpResponse::InternalServerError().finish();
+                }
+            }
+        },
+        Err(mut err) => {
+            return err.finish();
+        }
+    };
+}
+
+pub async fn add_orders(
+    req: HttpRequest,
+    mut order_req: web::Json<AddOrdersRequest>,
+    pool: web::Data<Pool<PostgresConnectionManager<NoTls>>>
+) -> impl Responder {
+    let user = match jwt::verify(&req) {
+        Ok(user_info) => user_info,
+        Err(err) => {
+            logger::log(logger::Header::ERROR, &err.to_string());
+            return HttpResponse::new(StatusCode::UNAUTHORIZED);
+        }
+    };
+
+    // Get a connection from the pool
+    let mut conn = pool.get().await.unwrap();
+
+    // Start a transaction
+    let mut transaction = conn.transaction().await.unwrap();
+    let rows_result = service::order_service::check_existence_and_insert_orders(
+        &mut transaction,
+        order_req.restaurant_table_id,
+        &mut order_req.menu_ids,
+        user.sub.clone(),
+    ).await;
 
     match rows_result {
         Ok(result) => {
             match result {
                 Ok(_rows) => {
+                    // Commit the transaction
+                    transaction.commit().await.unwrap();
                     return HttpResponse::Ok().finish();
                 }
                 Err(e) => {
+                    transaction.rollback().await.unwrap();
                     logger::log(logger::Header::ERROR, &e.to_string());
                     return HttpResponse::InternalServerError().finish();
                 }
@@ -250,7 +303,7 @@ pub async fn complete_order(
         Ok(user_row) => user_row.get("id"),
         Err(err) => {
             logger::log(logger::Header::ERROR, &err.to_string());
-            return HttpResponse::BadRequest().finish();
+            return HttpResponse::BadRequest().json(format!("This user doesn\'t exist."));
         }
     };
 
@@ -283,100 +336,4 @@ pub async fn complete_order(
             return HttpResponse::InternalServerError().finish();
         }
     };
-}
-
-async fn check_existence_and_insert(
-    transaction: &mut Transaction<'_>,
-    restaurant_table_id: i32,
-    menu_id: i32,
-    user_name: String,
-) -> Result<Result<u64, Error>, HttpResponseBuilder>
-{
-    // Execute a query using the connection from the pool
-    // Before inserting, we will validate each id.
-    let menu_row_result = transaction.query_one(
-        r#"
-        SELECT
-            *
-        FROM
-            menus
-        WHERE
-            menus.id = $1
-        ;
-        "#,
-        &[&menu_id]
-    ).await;
-    let menu_seconds = match menu_row_result {
-        Ok(menu_row) => {
-            let seconds: i32 = menu_row.get("cook_time_seconds");
-            seconds
-        },
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
-            return Err(HttpResponse::BadRequest());
-        }
-    };
-    let users_rows_result = transaction.query_one(
-        r#"
-        SELECT
-            *
-        FROM
-            users
-        WHERE
-            users.name = $1
-        ;
-        "#,
-        &[&user_name]
-    ).await;
-    let user_id: i32 = match users_rows_result {
-        Ok(users_row) => {
-            users_row.get("id")
-        },
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
-            return Err(HttpResponse::BadRequest());
-        }
-    };
-    let tables_row_result = transaction.query_one(
-        r#"
-        SELECT
-            *
-        FROM
-            restaurant_tables
-        WHERE
-            restaurant_tables.id = $1
-        ;
-        "#,
-        &[&restaurant_table_id]
-    ).await;
-    match tables_row_result {
-        Ok(_tables_row) => {}
-        Err(err) => {
-            logger::log(logger::Header::ERROR, &err.to_string());
-            return Err(HttpResponse::BadRequest());
-        }
-    };
-    // each id should be ok. inserting.
-    let current_datetime_utc = Utc::now();
-
-    let expected_cook_finish_time = current_datetime_utc + Duration::seconds(menu_seconds as i64);
-    let timestamp: SystemTime = expected_cook_finish_time.into();
-
-    let rows_result = transaction.execute(
-        r#"
-        INSERT INTO
-            orders
-        (restaurant_table_id, menu_id, checked_by_user_id, expected_cook_finish_time, is_served_by_staff)
-            values
-        ($1, $2, $3, $4, false)
-        ;
-        "#,
-        &[
-            &restaurant_table_id,
-            &menu_id,
-            &user_id,
-            &timestamp
-        ]
-    ).await;
-    Ok(rows_result)
 }
