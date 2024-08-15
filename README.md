@@ -2,13 +2,12 @@
 
 ### Prerequisites
 - Docker
-- Docker-compose
 
 ## How to start this application
 ```shell
 $ git clone https://github.com/lechatthecat/assignment
 $ cd assignment
-$ docker-compose up --build -d
+$ docker compose up --build -d
 ```
 
 After the compilation of the docker-compose environment, the application should be running on: http://localhost/login
