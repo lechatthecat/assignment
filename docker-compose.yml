@@ -1,0 +1,73 @@
+version: '3.5'
+
+services:
+    mydb:
+        build:
+            context: .
+            dockerfile: ./docker/postgresql/Dockerfile
+        environment:
+            POSTGRES_PASSWORD: 'postgres'
+            POSTGRES_USER: 'postgres'
+            POSTGRES_DB: 'restaurant'
+        ports:
+            - 5432:5432
+        container_name: mydb
+        volumes:
+            - db-store:/var/lib/postgresql/data
+            - ./logs:/var/log/postgresql:z
+        networks:
+            - app_net
+        # Password
+        env_file:
+            - ./docker/postgresql/.env.db
+        restart: on-failure:5
+    # Rust
+    myrust:
+        build:
+            context: .
+            dockerfile: ./docker/rust/Dockerfile
+        working_dir: /simple_restaurant_api
+        expose:
+            - "8080"
+        environment:
+            - TZ=UTC
+        volumes:
+            # log
+            - ./logs:/simple_restaurant_api/log
+            # Rust code
+            - ./simple_restaurant_api/public:/simple_restaurant_api/public
+            - ./simple_restaurant_api/src:/simple_restaurant_api/src
+            - ./simple_restaurant_api/Cargo.lock:/simple_restaurant_api/Cargo.lock
+            - ./simple_restaurant_api/Cargo.toml:/simple_restaurant_api/Cargo.toml
+        command: /simple_restaurant_api/target/release/simple_restaurant_api
+        container_name: myrust
+        networks:
+            - app_net
+        restart: on-failure:5
+    # nginx
+    nginx:
+        image: nginx:1.23-alpine
+        depends_on:
+        - myrust
+        ports:
+        - 80:80
+        volumes:
+        # What should be served by nginx
+        # Rust code
+        - ./simple_restaurant_api/src:/simple_restaurant_api/src
+        - ./simple_restaurant_api/public:/simple_restaurant_api/public
+        - ./simple_restaurant_api/Cargo.lock:/simple_restaurant_api/Cargo.lock
+        - ./simple_restaurant_api/Cargo.toml:/simple_restaurant_api/Cargo.toml
+        # log
+        - ./logs:/var/log/nginx:z
+        # nginx config
+        - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+        container_name: nginx
+        networks:
+            - app_net
+        restart: on-failure:5
+networks:
+    app_net:
+        driver: "bridge"
+volumes:
+    db-store:

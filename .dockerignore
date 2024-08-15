@@ -1,0 +1,2 @@
+# to prevent the compiled code to be copied in the rust Dockerfile
+simple_restaurant_api/target/
