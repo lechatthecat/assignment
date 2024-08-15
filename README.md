@@ -62,4 +62,5 @@ I know separate frontend is not necessary at all. But I prepared a very simple f
 - Maybe I could have used swagger to create documents for APIs
 - I could have created more test cases in Rust code/Actix.
 - I know there would have been better way for Nextjs compilation... But this isn't the main task for this time.
+- This is intended to be used by internal people, so cache system (by Redis and CDN like Cloudflare) was not implemented, but those might also be needed in real world usage
   
