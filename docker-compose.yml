@@ -35,7 +35,6 @@ services:
             # log
             - ./logs:/simple_restaurant_api/log
             # Rust code
-            - ./simple_restaurant_api/public:/simple_restaurant_api/public
             - ./simple_restaurant_api/src:/simple_restaurant_api/src
             - ./simple_restaurant_api/Cargo.lock:/simple_restaurant_api/Cargo.lock
             - ./simple_restaurant_api/Cargo.toml:/simple_restaurant_api/Cargo.toml
@@ -54,10 +53,7 @@ services:
         volumes:
         # What should be served by nginx
         # Rust code
-        - ./simple_restaurant_api/src:/simple_restaurant_api/src
-        - ./simple_restaurant_api/public:/simple_restaurant_api/public
-        - ./simple_restaurant_api/Cargo.lock:/simple_restaurant_api/Cargo.lock
-        - ./simple_restaurant_api/Cargo.toml:/simple_restaurant_api/Cargo.toml
+        - ./frontend:/frontend
         # log
         - ./logs:/var/log/nginx:z
         # nginx config
