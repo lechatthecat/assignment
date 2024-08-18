@@ -40,10 +40,6 @@ The requests are:
 8. Delete all orders of the table
 
 This set of requests will be sent 15 times at once asynchronously.
-As actix web server will spawn 20 workers, it should handle more than 10 requests at once.
-So I think this will achieve this requirement:
-
-> The application MUST accept at least 10 simultaneous incoming add/- remove/query requests.
 
 ## But will it really work as an application?
 I know separate frontend is not necessary at all. But I prepared a very simple frontend with React and Next.js. You can see the login page from here: http://localhost/login
